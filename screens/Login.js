@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import {
 	Image,
 	ImageBackground,
@@ -8,14 +8,16 @@ import {
 } from "react-native";
 import loginBg from "../assets/images/login-bg.jpg";
 import logo from "../assets/images/logo.jpg";
-import Button from "../components/Button"; // Assuming the Button component is in the components folder
-import Input from "../components/Input"; // Assuming the Input component is in the components folder
+import Button from "../components/UI/Button"; // Assuming the Button component is in the components folder
+import Input from "../components/UI/Input"; // Assuming the Input component is in the components folder
+import { AuthContext } from "../store/auth-context";
 
 function Login({ navigation }) {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [formIsValid, setFormIsValid] = useState(false);
+	const { login } = useContext(AuthContext);
 
 	useEffect(() => {
 		navigation.setOptions({
@@ -24,24 +26,24 @@ function Login({ navigation }) {
 	}, [navigation]);
 
 	// Email validation function
-	const validateEmail = email => {
+	function validateEmail() {
 		const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 		if (!email || !emailRegex.test(email)) {
 			return false;
 		}
 		return true;
-	};
+	}
 
 	// Password validation function
-	const validatePassword = password => {
+	function validatePassword() {
 		if (!password || password.length < 1) {
 			return false;
 		}
 		return true;
-	};
+	}
 
 	// Handle form submission
-	const handleLogin = () => {
+	function handleLogin() {
 		const emailValid = validateEmail(email);
 		const passwordValid = validatePassword(password);
 
@@ -50,10 +52,11 @@ function Login({ navigation }) {
 			setTimeout(() => {
 				setIsLoading(false);
 				console.log("Login successful:", { email, password });
+				login();
 			}, 2000);
 			Keyboard.dismiss();
 		}
-	};
+	}
 
 	// Check if the form is valid (email and password)
 	useEffect(() => {
@@ -73,6 +76,7 @@ function Login({ navigation }) {
 					keyboardType="email-address"
 					value={email}
 					onChangeText={setEmail}
+					autoFocus={true}
 				/>
 				<Input
 					placeholder="Parol"
@@ -82,8 +86,9 @@ function Login({ navigation }) {
 				/>
 				<Button
 					isLoading={isLoading}
-					formIsValid={formIsValid}
+					disabled={formIsValid}
 					handlePress={handleLogin}
+					buttonText="Tizimga kirish"
 				/>
 			</View>
 		</ImageBackground>

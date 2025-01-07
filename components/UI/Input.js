@@ -7,6 +7,10 @@ const Input = forwardRef((props, ref) => {
 		placeholderTextColor = "#ffffff",
 		keyboardType = "default",
 		secureTextEntry = false,
+		autoCapitalize = "none",
+		autoCorrect = false,
+		autoFocus = false,
+		autoComplete = "off",
 		style,
 		...rest
 	} = props;
@@ -19,6 +23,10 @@ const Input = forwardRef((props, ref) => {
 			placeholderTextColor={placeholderTextColor}
 			keyboardType={keyboardType}
 			secureTextEntry={secureTextEntry}
+			autoCapitalize={autoCapitalize}
+			autoCorrect={autoCorrect}
+			autoFocus={autoFocus}
+			autoComplete={autoComplete}
 			{...rest}
 		/>
 	);

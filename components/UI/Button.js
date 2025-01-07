@@ -1,10 +1,11 @@
 import React from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
 
-const CustomButton = ({
+const Button = ({
 	isLoading,
-	formIsValid,
+	buttonText,
 	handlePress,
+	disabled = false,
 	buttonHeight = 50,
 	indicatorSize = "small",
 	buttonTextSize = 16,
@@ -12,7 +13,6 @@ const CustomButton = ({
 	disabledBgColor = "rgba(0, 0, 0, 0.4)",
 	disabledOpacity = 0.5,
 	buttonWidth = 300,
-	buttonText = "Tizimga kirish",
 }) => {
 	return (
 		<Pressable
@@ -21,12 +21,12 @@ const CustomButton = ({
 				styles.button,
 				{
 					height: buttonHeight,
-					backgroundColor: formIsValid ? bgColor : disabledBgColor,
+					backgroundColor: !disabled ? bgColor : disabledBgColor,
 					width: buttonWidth,
 				},
-				!formIsValid && { opacity: disabledOpacity },
+				disabled && { opacity: disabledOpacity },
 			]}
-			disabled={!formIsValid} // Disable the button if form is invalid
+			disabled={disabled} // Disable the button if form is invalid
 		>
 			{isLoading ? (
 				<ActivityIndicator size={indicatorSize} color="#ffffff" />
@@ -53,4 +53,4 @@ const styles = StyleSheet.create({
 	},
 });
 
-export default CustomButton;
+export default Button;
