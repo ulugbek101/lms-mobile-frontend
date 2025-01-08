@@ -17,7 +17,7 @@ export const AuthContext = createContext({
 
 // Helper function to get tokens from AsyncStorage
 async function getTokensFromAsyncStorage() {
-	const storedTokens = await AsyncStorage.getItem("authTokens");
+	const storedTokens = await AsyncStorage.getItem("ModminAuthTokens");
 
 	try {
 		return JSON.parse(storedTokens);
@@ -48,13 +48,26 @@ function AuthContextProvider({ children }) {
 
 	// Fetch tokens and user data from AsyncStorage on mount
 	useEffect(() => {
-		const fetchTokens = async () => {
-			const storedTokens = await getTokensFromAsyncStorage();
-			if (storedTokens) {
-				setAuthTokens(storedTokens);
-				setUser(getUserFromAuthTokens(storedTokens));
+		async function fetchTokens() {
+			try {
+				const storedTokens = await AsyncStorage.getItem("ModminAuthTokens");
+				const storedUser = await AsyncStorage.getItem("ModminUser");
+
+				if (storedTokens) {
+					setAuthTokens(JSON.parse(storedTokens));
+					setUser(
+						storedUser
+							? JSON.parse(storedUser)
+							: getUserFromAuthTokens(JSON.parse(storedTokens))
+					);
+				}
+			} catch (error) {
+				console.error(
+					"Error fetching tokens or user from AsyncStorage:",
+					error
+				);
 			}
-		};
+		}
 
 		fetchTokens();
 	}, []);
@@ -62,26 +75,35 @@ function AuthContextProvider({ children }) {
 	// Persist authTokens to AsyncStorage whenever they change
 	useEffect(() => {
 		if (authTokens) {
-			AsyncStorage.setItem("authTokens", JSON.stringify(authTokens));
+			AsyncStorage.setItem("ModminAuthTokens", JSON.stringify(authTokens));
+			AsyncStorage.setItem("ModminUser", JSON.stringify(user)); // Store user
 		}
-	}, [authTokens]);
+	}, [authTokens, user]);
 
-	// Login function
 	async function login(email, password) {
 		try {
-			const response = await axios.post(`${baseURL}/api/v1/token/`, {
+			const response = await axios.post(`${baseURL}/token/`, {
 				email,
 				password,
 			});
+			const decodedUser = jwtDecode(response.data.access);
 
 			// Set authTokens and user data
 			setAuthTokens(response.data);
-			setUser(jwtDecode(response.data.access)); // Corrected typo here
-			navigate("authStack", null, true);
-			setLoginError(null); // Reset any previous errors on successful login
+			setUser(decodedUser);
+
+			// Persist immediately after setting states
+			await AsyncStorage.setItem(
+				"ModminAuthTokens",
+				JSON.stringify(response.data)
+			);
+			await AsyncStorage.setItem("ModminUser", JSON.stringify(decodedUser));
+
+			setLoginError(null); // Clear any error
+			navigate("authStack", null, true); // Redirect
 		} catch (error) {
 			console.error("Error while authenticating:", error);
-			setLoginError("Invalid credentials or network error"); // Set error message for UI
+			setLoginError("Invalid credentials or network error");
 		}
 	}
 
@@ -89,7 +111,8 @@ function AuthContextProvider({ children }) {
 	function logout() {
 		setUser(null);
 		setAuthTokens(null);
-		AsyncStorage.removeItem("authTokens"); // Optionally clear tokens on logout
+		AsyncStorage.removeItem("ModminAuthTokens");
+		AsyncStorage.removeItem("ModminUser"); // Clear stored user
 		navigate("login", null, true);
 	}
 
