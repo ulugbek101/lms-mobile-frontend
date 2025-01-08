@@ -1,7 +1,7 @@
 import { StyleSheet, Text } from "react-native";
 
-function ProfileCardTitle({ children }) {
-	return <Text style={styles.title}>{children}</Text>;
+function ProfileCardTitle({ title }) {
+	return <Text style={styles.title}>{title}</Text>;
 }
 
 const styles = StyleSheet.create({

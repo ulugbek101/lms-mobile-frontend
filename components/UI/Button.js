@@ -21,10 +21,10 @@ const Button = ({
 				styles.button,
 				{
 					height: buttonHeight,
-					backgroundColor: !disabled ? bgColor : disabledBgColor,
+					backgroundColor: disabled ? disabledBgColor : bgColor, // Simplified ternary
 					width: buttonWidth,
 				},
-				disabled && { opacity: disabledOpacity },
+				disabled && { opacity: disabledOpacity }, // Apply opacity if disabled
 			]}
 			disabled={disabled} // Disable the button if form is invalid
 		>

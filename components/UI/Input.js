@@ -1,36 +1,39 @@
 import React, { forwardRef } from "react";
 import { StyleSheet, TextInput } from "react-native";
 
-const Input = forwardRef((props, ref) => {
-	const {
-		placeholder,
-		placeholderTextColor = "#ffffff",
-		keyboardType = "default",
-		secureTextEntry = false,
-		autoCapitalize = "none",
-		autoCorrect = false,
-		autoFocus = false,
-		autoComplete = "off",
-		style,
-		...rest
-	} = props;
-
-	return (
-		<TextInput
-			ref={ref}
-			style={[styles.input, style]}
-			placeholder={placeholder}
-			placeholderTextColor={placeholderTextColor}
-			keyboardType={keyboardType}
-			secureTextEntry={secureTextEntry}
-			autoCapitalize={autoCapitalize}
-			autoCorrect={autoCorrect}
-			autoFocus={autoFocus}
-			autoComplete={autoComplete}
-			{...rest}
-		/>
-	);
-});
+const Input = forwardRef(
+	(
+		{
+			placeholder,
+			placeholderTextColor = "#ffffff",
+			keyboardType = "default",
+			secureTextEntry = false,
+			autoCapitalize = "none",
+			autoCorrect = false,
+			autoFocus = false,
+			autoComplete = "off",
+			style,
+			...rest
+		},
+		ref
+	) => {
+		return (
+			<TextInput
+				ref={ref}
+				style={[styles.input, style]} // Combine styles
+				placeholder={placeholder}
+				placeholderTextColor={placeholderTextColor}
+				keyboardType={keyboardType}
+				secureTextEntry={secureTextEntry}
+				autoCapitalize={autoCapitalize}
+				autoCorrect={autoCorrect}
+				autoFocus={autoFocus}
+				autoComplete={autoComplete}
+				{...rest} // Spread any other props (like onChangeText, value, etc.)
+			/>
+		);
+	}
+);
 
 const styles = StyleSheet.create({
 	input: {

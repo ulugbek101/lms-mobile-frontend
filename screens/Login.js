@@ -10,60 +10,51 @@ import loginBg from "../assets/images/login-bg.jpg";
 import logo from "../assets/images/logo.jpg";
 import Button from "../components/UI/Button"; // Assuming the Button component is in the components folder
 import Input from "../components/UI/Input"; // Assuming the Input component is in the components folder
+import { navigate } from "../helpers/navigation";
 import { AuthContext } from "../store/auth-context";
 
 function Login({ navigation }) {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
-	const [formIsValid, setFormIsValid] = useState(false);
-	const { login } = useContext(AuthContext);
+	const [formIsValid, setFormIsValid] = useState(true);
+	const { login, user } = useContext(AuthContext);
 
+	// Redirect if the user is already logged in
 	useEffect(() => {
-		navigation.setOptions({
-			headerShown: false,
-		});
-	}, [navigation]);
+		if (user) {
+			navigate("authStack", null, true); // Navigate directly to authStack if user is logged in
+		}
+	}, [user]);
 
-	// Email validation function
-	function validateEmail() {
+	// Handle login form validation
+	useEffect(() => {
 		const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-		if (!email || !emailRegex.test(email)) {
-			return false;
-		}
-		return true;
-	}
+		setFormIsValid(
+			email && emailRegex.test(email) && password && password.length >= 1
+		);
+	}, [email, password]);
 
-	// Password validation function
-	function validatePassword() {
-		if (!password || password.length < 1) {
-			return false;
-		}
-		return true;
-	}
-
-	// Handle form submission
-	function handleLogin() {
-		const emailValid = validateEmail(email);
-		const passwordValid = validatePassword(password);
-
-		if (emailValid && passwordValid) {
+	// Handle the login action
+	async function handleLogin() {
+		if (formIsValid) {
 			setIsLoading(true);
-			setTimeout(() => {
+			try {
+				await login(email, password);
+			} catch (error) {
+				console.error("An error occurred while logging in");
+				console.error(error);
+			} finally {
 				setIsLoading(false);
-				console.log("Login successful:", { email, password });
-				login();
-			}, 2000);
+			}
 			Keyboard.dismiss();
 		}
 	}
 
-	// Check if the form is valid (email and password)
-	useEffect(() => {
-		const emailValid = validateEmail(email);
-		const passwordValid = validatePassword(password);
-		setFormIsValid(emailValid && passwordValid);
-	}, [email, password]);
+	// If user is logged in, don't render login screen, otherwise show login form
+	if (user) {
+		return null; // Prevent rendering the login screen if user is already logged in
+	}
 
 	return (
 		<ImageBackground source={loginBg} style={styles.container}>
@@ -86,7 +77,7 @@ function Login({ navigation }) {
 				/>
 				<Button
 					isLoading={isLoading}
-					disabled={formIsValid}
+					disabled={!formIsValid}
 					handlePress={handleLogin}
 					buttonText="Tizimga kirish"
 				/>

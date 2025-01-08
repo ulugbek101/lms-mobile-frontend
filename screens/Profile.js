@@ -27,25 +27,18 @@ function Profile({ navigation }) {
 
 	return (
 		<Container>
-			{/* Profile Image */}
 			<View style={styles.profileImageContainer}>
 				<Image
 					style={styles.profileImage}
 					source={require("../assets/images/logo.jpg")}
 				/>
 			</View>
-
-			{/* Profile Card */}
 			<ProfileCard style={{ marginTop: 20 }}>
 				<View style={styles.userInfoContainer}>
-					{/* User Icon and Title */}
 					<View style={styles.cardHeader}>
-						<FontAwesome name="user" size={30} color="#00000070" />{" "}
-						{/* User Icon */}
-						<ProfileCardTitle>Shaxsiy ma'lumotlar</ProfileCardTitle>
+						<FontAwesome name="user" size={30} color="#00000070" />
+						<ProfileCardTitle title="Shaxsiy ma'lumotlar" />
 					</View>
-
-					{/* Inputs */}
 					<Input
 						placeholder="Ism"
 						style={styles.input}
