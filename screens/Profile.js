@@ -62,18 +62,56 @@ function Profile({ navigation }) {
 			Toast.show({
 				type: "success",
 				text1: "Shaxsiy ma'lumotlaringiz yangilandi",
-				swipeable: true,
-				visibilityTime: 5000,
 			});
 		} catch (error) {
 			Toast.show({
 				type: "error",
 				text1: "Ma'lumotlarni yangilashda xatolik yuz berdi",
-				text2: `${error}`,
+				text2: "Forma to'g'ri to'ldirilganiga ishonch hosil qiling",
 			});
 			console.error(error);
 		} finally {
 			setUserInfoUpdateLoading(false);
+		}
+	}
+
+	async function updateUserPassword() {
+		if (
+			password1 &&
+			password2 &&
+			password1 === password2 &&
+			password2.trim().length >= 8
+		) {
+			try {
+				setPasswordUpdateLoading(true);
+				console.log(password2)
+				const response = await axiosInstance.patch(
+					`${baseURL}/users/${user.id}/`,
+					{ password: password2 }
+				);
+				Toast.show({
+					type: "success",
+					text1: "Parol muvaffaqiyatli yangilandi",
+				});
+				setPassword1("");
+				setPassword2("");
+			} catch (error) {
+				Toast.show({
+					type: "error",
+					text1: "Parolni yangilashda xatolik yuz berdi",
+					text2: `${error}`,
+				});
+				console.error(error);
+			} finally {
+				setPasswordUpdateLoading(false);
+			}
+		} else {
+			Toast.show({
+				type: "error",
+				text1: "Xatolik",
+				text2:
+					"Parollar bir xil bo'lishi va eng kamida 8 belgi kiritilishi kerak",
+			});
 		}
 	}
 
@@ -158,6 +196,7 @@ function Profile({ navigation }) {
 									onChangeText={value => setPassword2(value)}
 								/>
 								<Button
+									handlePress={updateUserPassword}
 									buttonText="Parolni yangilash"
 									buttonWidth="100%"
 									bgColor="#000000d8"
