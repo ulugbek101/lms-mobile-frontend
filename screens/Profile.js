@@ -1,4 +1,4 @@
-import { FontAwesome } from "@expo/vector-icons";
+import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useContext, useEffect, useState } from "react";
 import {
@@ -21,7 +21,7 @@ import useAxios from "../hooks/useAxios";
 import { AuthContext } from "../store/auth-context";
 
 function Profile({ navigation }) {
-	const { user, setUser } = useContext(AuthContext);
+	const { user, setUser, logout } = useContext(AuthContext);
 	const axiosInstance = useAxios();
 	const [firstName, setFirstName] = useState(user?.first_name);
 	const [lastName, setLastName] = useState(user?.last_name);
@@ -31,6 +31,7 @@ function Profile({ navigation }) {
 	const [userInfoUpdateLoading, setUserInfoUpdateLoading] = useState(false);
 	const [passwordUpdateLoading, setPasswordUpdateLoading] = useState(false);
 	const [passwordsAreValid, setPasswordsAreValid] = useState(false);
+	const [userInfoIsValid, setUserInfoIsValid] = useState(false);
 
 	useEffect(() => {
 		navigation.setOptions({
@@ -41,12 +42,28 @@ function Profile({ navigation }) {
 				fontWeight: "bold",
 			},
 			headerBackTitle: "Orqaga",
+			headerRight: () => (
+				<MaterialIcons
+					name="logout"
+					size={24}
+					style={{ marginRight: 8 }}
+					onPress={logout}
+				/>
+			),
 		});
 	}, [user]);
 
 	useEffect(() => {
 		setPasswordsAreValid(password1 === password2 && password2.length >= 8);
-	}, [password1, password2]);
+		setUserInfoIsValid(
+			firstName &&
+				lastName &&
+				email &&
+				firstName.trim().length >= 3 &&
+				lastName.trim().length >= 3 &&
+				/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)
+		);
+	}, [password1, password2, firstName, lastName, email]);
 
 	async function updateUserInformation() {
 		setUserInfoUpdateLoading(true);
@@ -71,8 +88,8 @@ function Profile({ navigation }) {
 		} catch (error) {
 			Toast.show({
 				type: "error",
-				text1: "Ma'lumotlarni yangilashda xatolik yuz berdi",
-				text2: "Forma to'g'ri to'ldirilganiga ishonch hosil qiling",
+				text1: "Shaxsiy ma'lumotlarni yangilashda xatolik yuz berdi",
+				text2: `${error}`,
 			});
 			console.error(error);
 		} finally {
@@ -83,10 +100,9 @@ function Profile({ navigation }) {
 	async function updateUserPassword() {
 		try {
 			setPasswordUpdateLoading(true);
-			const response = await axiosInstance.patch(
-				`${baseURL}/users/${user.id}/`,
-				{ password: password2 }
-			);
+			await axiosInstance.patch(`${baseURL}/users/${user.id}/`, {
+				password: password2,
+			});
 			Toast.show({
 				type: "success",
 				text1: "Parol muvaffaqiyatli yangilandi",
@@ -158,7 +174,7 @@ function Profile({ navigation }) {
 									buttonWidth="100%"
 									bgColor="#000000d8"
 									isLoading={userInfoUpdateLoading}
-									disabled={userInfoUpdateLoading}
+									disabled={!userInfoUpdateLoading && !userInfoIsValid}
 								/>
 							</View>
 						</ProfileCard>
