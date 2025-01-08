@@ -1,4 +1,4 @@
-import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
+import { FontAwesome } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useContext, useEffect, useState } from "react";
 import {
@@ -20,8 +20,8 @@ import { baseURL } from "../constants";
 import useAxios from "../hooks/useAxios";
 import { AuthContext } from "../store/auth-context";
 
-function Profile({ navigation }) {
-	const { user, setUser, logout } = useContext(AuthContext);
+function Profile() {
+	const { user, setUser } = useContext(AuthContext);
 	const axiosInstance = useAxios();
 	const [firstName, setFirstName] = useState(user?.first_name);
 	const [lastName, setLastName] = useState(user?.last_name);
@@ -32,26 +32,6 @@ function Profile({ navigation }) {
 	const [passwordUpdateLoading, setPasswordUpdateLoading] = useState(false);
 	const [passwordsAreValid, setPasswordsAreValid] = useState(false);
 	const [userInfoIsValid, setUserInfoIsValid] = useState(false);
-
-	useEffect(() => {
-		navigation.setOptions({
-			title: "Shaxsiy kabinet",
-			headerTitleAlign: "center",
-			headerTitleStyle: {
-				fontSize: 18,
-				fontWeight: "bold",
-			},
-			headerBackTitle: "Orqaga",
-			headerRight: () => (
-				<MaterialIcons
-					name="logout"
-					size={24}
-					style={{ marginRight: 8 }}
-					onPress={logout}
-				/>
-			),
-		});
-	}, [user]);
 
 	useEffect(() => {
 		setPasswordsAreValid(password1 === password2 && password2.length >= 8);
@@ -173,6 +153,7 @@ function Profile({ navigation }) {
 									buttonText="Ma'lumotlarni saqlash"
 									buttonWidth="100%"
 									bgColor="#000000d8"
+									disabledBgColor="#00000070"
 									isLoading={userInfoUpdateLoading}
 									disabled={!userInfoUpdateLoading && !userInfoIsValid}
 								/>
@@ -206,6 +187,7 @@ function Profile({ navigation }) {
 									buttonText="Parolni yangilash"
 									buttonWidth="100%"
 									bgColor="#000000d8"
+									disabledBgColor="#00000070"
 									isLoading={passwordUpdateLoading}
 									disabled={!passwordUpdateLoading && !passwordsAreValid}
 								/>
