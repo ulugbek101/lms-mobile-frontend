@@ -30,6 +30,7 @@ function Profile({ navigation }) {
 	const [password2, setPassword2] = useState("");
 	const [userInfoUpdateLoading, setUserInfoUpdateLoading] = useState(false);
 	const [passwordUpdateLoading, setPasswordUpdateLoading] = useState(false);
+	const [passwordsAreValid, setPasswordsAreValid] = useState(false);
 
 	useEffect(() => {
 		navigation.setOptions({
@@ -42,6 +43,10 @@ function Profile({ navigation }) {
 			headerBackTitle: "Orqaga",
 		});
 	}, [user]);
+
+	useEffect(() => {
+		setPasswordsAreValid(password1 === password2 && password2.length >= 8);
+	}, [password1, password2]);
 
 	async function updateUserInformation() {
 		setUserInfoUpdateLoading(true);
@@ -76,42 +81,27 @@ function Profile({ navigation }) {
 	}
 
 	async function updateUserPassword() {
-		if (
-			password1 &&
-			password2 &&
-			password1 === password2 &&
-			password2.trim().length >= 8
-		) {
-			try {
-				setPasswordUpdateLoading(true);
-				console.log(password2)
-				const response = await axiosInstance.patch(
-					`${baseURL}/users/${user.id}/`,
-					{ password: password2 }
-				);
-				Toast.show({
-					type: "success",
-					text1: "Parol muvaffaqiyatli yangilandi",
-				});
-				setPassword1("");
-				setPassword2("");
-			} catch (error) {
-				Toast.show({
-					type: "error",
-					text1: "Parolni yangilashda xatolik yuz berdi",
-					text2: `${error}`,
-				});
-				console.error(error);
-			} finally {
-				setPasswordUpdateLoading(false);
-			}
-		} else {
+		try {
+			setPasswordUpdateLoading(true);
+			const response = await axiosInstance.patch(
+				`${baseURL}/users/${user.id}/`,
+				{ password: password2 }
+			);
+			Toast.show({
+				type: "success",
+				text1: "Parol muvaffaqiyatli yangilandi",
+			});
+			setPassword1("");
+			setPassword2("");
+		} catch (error) {
 			Toast.show({
 				type: "error",
-				text1: "Xatolik",
-				text2:
-					"Parollar bir xil bo'lishi va eng kamida 8 belgi kiritilishi kerak",
+				text1: "Parolni yangilashda xatolik yuz berdi",
+				text2: `${error}`,
 			});
+			console.error(error);
+		} finally {
+			setPasswordUpdateLoading(false);
 		}
 	}
 
@@ -177,7 +167,7 @@ function Profile({ navigation }) {
 							<View style={styles.userInfoContainer}>
 								<View style={styles.cardHeader}>
 									<FontAwesome name="lock" size={30} color="#00000070" />
-									<ProfileCardTitle title="Parolni yangilash" />
+									<ProfileCardTitle title="Parol" />
 								</View>
 								<Input
 									placeholder="Parol"
@@ -201,7 +191,7 @@ function Profile({ navigation }) {
 									buttonWidth="100%"
 									bgColor="#000000d8"
 									isLoading={passwordUpdateLoading}
-									disabled={passwordUpdateLoading}
+									disabled={!passwordUpdateLoading && !passwordsAreValid}
 								/>
 							</View>
 						</ProfileCard>

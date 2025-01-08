@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"; // Correct
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { createContext, useEffect, useState } from "react";
+import Toast from "react-native-toast-message";
 import { baseURL } from "../constants";
 import { navigate } from "../helpers/navigation";
 
@@ -14,18 +15,6 @@ export const AuthContext = createContext({
 	setUser: () => {},
 	setAuthTokens: () => {},
 });
-
-// Helper function to get tokens from AsyncStorage
-async function getTokensFromAsyncStorage() {
-	const storedTokens = await AsyncStorage.getItem("ModminAuthTokens");
-
-	try {
-		return JSON.parse(storedTokens);
-	} catch (error) {
-		console.error("Error fetching tokens from AsyncStorage:", error);
-		return null;
-	}
-}
 
 // Helper function to get user data from auth tokens
 function getUserFromAuthTokens(authTokens) {
@@ -44,7 +33,6 @@ function getUserFromAuthTokens(authTokens) {
 function AuthContextProvider({ children }) {
 	const [authTokens, setAuthTokens] = useState(null);
 	const [user, setUser] = useState(null);
-	const [loginError, setLoginError] = useState(null); // To store login errors
 
 	// Fetch tokens and user data from AsyncStorage on mount
 	useEffect(() => {
@@ -98,12 +86,14 @@ function AuthContextProvider({ children }) {
 				JSON.stringify(response.data)
 			);
 			await AsyncStorage.setItem("ModminUser", JSON.stringify(decodedUser));
-
-			setLoginError(null); // Clear any error
 			navigate("authStack", null, true); // Redirect
 		} catch (error) {
 			console.error("Error while authenticating:", error);
-			setLoginError("Invalid credentials or network error");
+			Toast.show({
+				type: "error",
+				text1: "Foydalanuvchi topilmadi",
+				text2: "E-mail manzil yoki Parol xato kiritilgan",
+			});
 		}
 	}
 
@@ -123,7 +113,6 @@ function AuthContextProvider({ children }) {
 		logout,
 		setUser,
 		setAuthTokens,
-		loginError, // Include loginError in context to show in UI
 	};
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
