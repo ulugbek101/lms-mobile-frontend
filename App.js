@@ -10,6 +10,7 @@ import Toast from "react-native-toast-message";
 import { navigationRef } from "./helpers/navigation";
 import Login from "./screens/Login";
 import Profile from "./screens/Profile";
+import Subjects from "./screens/Subjects";
 import AuthContextProvider, { AuthContext } from "./store/auth-context";
 
 const Stack = createStackNavigator();
@@ -68,8 +69,8 @@ function AuthStack({ navigation }) {
 			/>
 
 			<Drawer.Screen
-				name="profile3"
-				component={Profile}
+				name="subjects"
+				component={Subjects}
 				options={{
 					title: "Fanlar",
 					drawerIcon: () => (

@@ -88,12 +88,21 @@ function AuthContextProvider({ children }) {
 			await AsyncStorage.setItem("ModminUser", JSON.stringify(decodedUser));
 			navigate("authStack", null, true); // Redirect
 		} catch (error) {
+			if (error.status === 401) {
+				Toast.show({
+					type: "error",
+					text1: "Foydalanuvchi topilmadi",
+					text2: "E-mail manzil yoki Parol xato kiritilgan",
+				});
+			}
+			else {
+				Toast.show({
+					type: "error",
+					text1: "Noma'lum xatolik yuz berdi, internetingiz yoniqmi ?",
+					text2: `${error}`
+				})
+			}
 			console.error("Error while authenticating:", error);
-			Toast.show({
-				type: "error",
-				text1: "Foydalanuvchi topilmadi",
-				text2: "E-mail manzil yoki Parol xato kiritilgan",
-			});
 		}
 	}
 

@@ -17,7 +17,8 @@ const Button = ({
 	return (
 		<Pressable
 			onPress={handlePress}
-			style={[
+			style={({ pressed }) => [
+				pressed && { opacity: 0.8 },
 				styles.button,
 				{
 					height: buttonHeight,
