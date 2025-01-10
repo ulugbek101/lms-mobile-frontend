@@ -8,6 +8,7 @@ import { StyleSheet } from "react-native";
 import Toast from "react-native-toast-message";
 
 import { navigationRef } from "./helpers/navigation";
+import Groups from "./screens/Groups";
 import Login from "./screens/Login";
 import Profile from "./screens/Profile";
 import Subjects from "./screens/Subjects";
@@ -83,8 +84,8 @@ function AuthStack({ navigation }) {
 				}}
 			/>
 			<Drawer.Screen
-				name="profile4"
-				component={Profile}
+				name="groups"
+				component={Groups}
 				options={{
 					title: "Guruhlar",
 					drawerIcon: () => (

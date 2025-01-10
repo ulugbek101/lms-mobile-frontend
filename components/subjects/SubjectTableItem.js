@@ -30,10 +30,15 @@ const SubjectTableItem = ({ index, item, onEdit, onDelete }) => {
 					<MaterialIcons name="edit" size={24} color="#007BFF" />
 				</TouchableOpacity>
 				<TouchableOpacity
+					disabled={Number(item.groups) > 0}
 					style={styles.actionButton}
 					onPress={() => onDelete(item.id)}
 				>
-					<MaterialIcons name="delete" size={24} color="#FF0000" />
+					<MaterialIcons
+						name="delete"
+						size={24}
+						color={Number(item.groups) > 0 ? "#00000070" : "#FF0000"}
+					/>
 				</TouchableOpacity>
 			</View>
 		</View>
@@ -44,7 +49,7 @@ const styles = StyleSheet.create({
 	subjectItem: {
 		flexDirection: "row",
 		alignItems: "center",
-		padding: 10,
+		padding: 5,
 		backgroundColor: "#F8F9FA",
 		borderRadius: 8,
 		marginBottom: 10,
@@ -66,13 +71,13 @@ const styles = StyleSheet.create({
 		marginLeft: 10,
 	},
 	groupText: {
-		width: 80,
+		width: 50,
 		textAlign: "center",
 		fontSize: 14,
 		color: "#6C757D",
 	},
 	studentText: {
-		width: 80,
+		width: 50,
 		textAlign: "center",
 		fontSize: 14,
 		color: "#6C757D",

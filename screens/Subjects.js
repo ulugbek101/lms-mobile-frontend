@@ -65,10 +65,15 @@ function Subjects() {
 		setIsActionLoading(true);
 		try {
 			// Update subject
-			await axiosInstance.put(`/subjects/${selectedSubject.id}/`, {
+			await axiosInstance.patch(`/subjects/${selectedSubject.id}/`, {
 				name: editedName,
 			});
-			// Re-fetch subjects after successful update
+			Toast.show({
+				type: "success",
+				position: "top",
+				text1: "Yangilandi",
+				text2: "Fan nomi muvaffaqiyatli yangilandi",
+			});
 			fetchSubjects();
 		} catch (error) {
 			if (error.response && error.response.status === 400) {
@@ -170,7 +175,7 @@ function Subjects() {
 				<Button
 					buttonText="Fan qo'shish"
 					buttonHeight={30}
-					buttonWidth="35%"
+					buttonWidth="45%"
 					handlePress={handleAddNewSubject} // Trigger modal for adding new subject
 				/>
 			</View>

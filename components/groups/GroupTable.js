@@ -1,30 +1,27 @@
 import React from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
-import SubjectTableItem from "./SubjectTableItem";
+import GroupTableItem from "../groups/GroupTableItem";
 
-const SubjectsTable = ({ subjects, onEdit, onDelete }) => {
-	// Sort subjects alphabetically by name
-	const sortedSubjects = subjects.sort((a, b) => a.name.localeCompare(b.name));
+const GroupsTable = ({ groups, onEdit, onDelete }) => {
+	// Sort groups alphabetically by name
+	const sortedGroups = groups.sort((a, b) => a.name.localeCompare(b.name));
 
 	return (
 		<View style={styles.tableContainer}>
 			{/* Table Header */}
 			<View style={styles.tableHeader}>
 				<Text style={[styles.headerText, styles.numberHeader]}>#</Text>
-				<Text style={[styles.headerText, styles.nameHeader]}>Fan nomi</Text>
-				<Text style={[styles.headerText, styles.groupHeader]}>Guruh soni</Text>
-				<Text style={[styles.headerText, styles.studentHeader]}>
-					O'quvchi soni
-				</Text>
-				<Text style={[styles.headerText, styles.actionsHeader]}></Text>
+				<Text style={[styles.headerText, styles.nameHeader]}>Guruh nomi</Text>
+				<Text style={[styles.headerText, styles.membersHeader]}>Ustoz</Text>
+				<Text style={[styles.headerText, styles.actionsHeader]}>Amallar</Text>
 			</View>
 
 			{/* Table Rows */}
 			<FlatList
-				data={sortedSubjects} // Use the sorted subjects here
-				keyExtractor={item => item.id}
+				data={sortedGroups} // Use the sorted groups here
+				keyExtractor={item => item.id.toString()}
 				renderItem={({ item, index }) => (
-					<SubjectTableItem
+					<GroupTableItem
 						index={index}
 						item={item}
 						onEdit={onEdit}
@@ -32,7 +29,7 @@ const SubjectsTable = ({ subjects, onEdit, onDelete }) => {
 					/>
 				)}
 				ListEmptyComponent={
-					<Text style={styles.emptyText}>Fanlar mavjud emas</Text>
+					<Text style={styles.emptyText}>Guruhlar mavjud emas</Text>
 				}
 			/>
 		</View>
@@ -63,16 +60,12 @@ const styles = StyleSheet.create({
 		flex: 1,
 		marginLeft: 10,
 	},
-	groupHeader: {
-		width: 60,
-		textAlign: "center",
-	},
-	studentHeader: {
-		width: 60,
+	membersHeader: {
+		width: 120,
 		textAlign: "center",
 	},
 	actionsHeader: {
-		width: 60,
+		width: 80,
 		textAlign: "center",
 	},
 	emptyText: {
@@ -83,4 +76,4 @@ const styles = StyleSheet.create({
 	},
 });
 
-export default SubjectsTable;
+export default GroupsTable;
