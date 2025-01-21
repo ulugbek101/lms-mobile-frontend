@@ -1,4 +1,4 @@
-import DatePicker from "@react-native-community/datetimepicker";
+import { MaterialIcons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
 	ActivityIndicator,
@@ -8,49 +8,57 @@ import {
 	View,
 } from "react-native";
 import Toast from "react-native-toast-message";
+import DatePickerComponent from "../components/groups/DatePicker";
 import GroupStateDropdown from "../components/groups/GroupStateDropdown";
 import GroupsTable from "../components/groups/GroupTable";
 import LessonDaysDropdown from "../components/groups/LessonDaysDropdown";
+import SubjectDropdown from "../components/groups/SubjectDropdown";
 import TeacherDropdown from "../components/groups/TeacherDropdown";
+import TimePicker from "../components/groups/TimePicker";
 import Button from "../components/UI/Button";
 import Modal from "../components/UI/Modal";
 import useAxios from "../hooks/useAxios";
 
-function Groups() {
-	const [groups, setGroups] = useState([]);
-	const [isLoading, setIsLoading] = useState(false);
-	const [isActionLoading, setIsActionLoading] = useState(false);
-	const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+function GroupManager() {
+	const [groupList, setGroupList] = useState([]);
+	const [isFetching, setIsFetching] = useState(false);
+	const [isActionInProgress, setIsActionInProgress] = useState(false);
+	const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
 	const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-	const [selectedGroup, setSelectedGroup] = useState(null);
-	const [editedName, setEditedName] = useState("");
+	const [currentGroup, setCurrentGroup] = useState(null);
+	const [groupNameToEdit, setGroupNameToEdit] = useState("");
 	const [newGroupName, setNewGroupName] = useState("");
-	const [lessonDaysSelected, setLessonDays] = useState("");
-	const [startDate, setStartDate] = useState(new Date());
-	const [endDate, setEndDate] = useState(new Date());
-	const [state, setState] = useState(null);
-	const [selectedTeacherId, setSelectedTeacherId] = useState(null);
-	const [validationError, setValidationError] = useState("");
+	const [selectedSubject, setSelectedSubject] = useState(null);
+	const [selectedLessonDays, setSelectedLessonDays] = useState("");
+	const [groupStartDate, setGroupStartDate] = useState(new Date());
+	const [groupEndDate, setGroupEndDate] = useState(new Date());
+	const [lessonStartTime, setLessonStartTime] = useState(null);
+	const [lessonEndTime, setLessonEndTime] = useState(null);
+	const [isStartDatePickerVisible, setIsStartDatePickerVisible] =
+		useState(false);
+	const [isEndDatePickerVisible, setIsEndDatePickerVisible] = useState(false);
+	const [groupState, setGroupState] = useState(null);
+	const [assignedTeacher, setAssignedTeacher] = useState(null);
+	const [errorMessage, setErrorMessage] = useState("");
 	const axiosInstance = useAxios();
 
-	// Function to fetch groups from the server
 	const fetchGroups = async () => {
-		setIsLoading(true);
+		setIsFetching(true);
 		try {
 			const response = await axiosInstance.get("/groups/");
-			setGroups(response.data);
+			setGroupList(response.data);
 		} catch (error) {
 			let errorMessage = "An error occurred";
 			if (!error.response) {
-				errorMessage = "Internetga bog'lanish mavjud emas";
+				errorMessage = "No internet connection";
 			} else if (error.response.status === 500) {
-				errorMessage = "Server xatoligi, iltimos keyinroq urinib ko'ring";
+				errorMessage = "Server error, please try again later";
 			} else if (error.response.status === 404) {
-				errorMessage = "Guruhlar topilmadi!";
+				errorMessage = "No groups found!";
 			}
 			console.error("Error while fetching groups", error);
 		} finally {
-			setIsLoading(false);
+			setIsFetching(false);
 		}
 	};
 
@@ -58,203 +66,270 @@ function Groups() {
 		fetchGroups();
 	}, []);
 
-	const handleEdit = group => {
-		setSelectedGroup(group);
-		setEditedName(group.name);
-		setIsEditModalVisible(true);
-	};
-
-	const handleSaveEdit = async () => {
-		setIsActionLoading(true);
-		try {
-			await axiosInstance.patch(`/groups/${selectedGroup.id}/`, {
-				name: editedName,
-			});
-			fetchGroups();
-		} catch (error) {
-			if (error.response && error.response.status === 400) {
-				Toast.show({
-					type: "error",
-					position: "top",
-					text1: "Guruh nomini yangilashda xatolik",
-					text2: "Bunday nomli guruh allaqachon mavjud",
-				});
-			}
-			console.log("Error while saving group", error);
-		} finally {
-			setIsActionLoading(false);
-			setIsEditModalVisible(false);
-			setSelectedGroup(null);
-		}
-	};
-
-	const handleDelete = async id => {
-		setIsActionLoading(true);
-		try {
-			await axiosInstance.delete(`/groups/${id}/`);
-			fetchGroups();
-		} catch (error) {
-			Toast.show({
-				type: "error",
-				position: "top",
-				text1: "Guruh o'chirishda xatolik",
-				text2: "Server xatoligi, iltimos keyinroq urinib ko'ring",
-			});
-			console.log("Error while deleting group", error);
-		} finally {
-			setIsActionLoading(false);
-		}
-	};
-
-	const handleCancelEdit = () => {
-		setIsEditModalVisible(false);
-		setSelectedGroup(null);
-		setEditedName("");
-	};
-
-	const handleAddNewGroup = () => {
+	const handleCreateNewGroup = () => {
 		setNewGroupName("");
-		setLessonDays("");
-		setStartDate(new Date());
-		setEndDate(new Date());
-		setState(null);
-		setSelectedTeacherId(null);
-		setIsAddModalVisible(true);
+		setSelectedLessonDays("");
+		setGroupStartDate(new Date());
+		setGroupEndDate(new Date());
+		setLessonStartTime(null);
+		setLessonEndTime(null);
+		setGroupState(null);
+		setAssignedTeacher(null);
+		setIsCreateModalVisible(true);
+	};
+
+	const formatTime = time => {
+		if (!time) {
+			throw new Error("Time is undefined or invalid");
+		}
+
+		// Assuming `time` is in `1:00 AM` format
+		const timeParts = time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+		if (!timeParts) {
+			throw new Error("Invalid time format");
+		}
+
+		let [_, hours, minutes, period] = timeParts;
+		hours = parseInt(hours, 10);
+		minutes = parseInt(minutes, 10);
+
+		if (period.toUpperCase() === "PM" && hours !== 12) {
+			hours += 12;
+		} else if (period.toUpperCase() === "AM" && hours === 12) {
+			hours = 0;
+		}
+
+		return (
+			`${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}` +
+			":00"
+		);
 	};
 
 	const handleSaveNewGroup = async () => {
 		if (
 			!newGroupName ||
-			!selectedTeacherId ||
-			!lessonDaysSelected ||
-			!startDate ||
-			!endDate ||
-			state === null
+			!assignedTeacher ||
+			!selectedLessonDays ||
+			!groupStartDate ||
+			!groupEndDate ||
+			groupState === null ||
+			!selectedSubject ||
+			!lessonStartTime ||
+			!lessonEndTime
 		) {
-			setValidationError("Iltimos, barcha sohalarni to'ldiring");
+			setErrorMessage("Please fill out all fields");
 			return;
 		}
-		setValidationError("");
-		setIsActionLoading(true);
+
+		setErrorMessage("");
+		setIsActionInProgress(true);
+
 		try {
-			await axiosInstance.post("/groups/", {
+			const formatDate = date => {
+				const d = new Date(date);
+				const day = String(d.getDate()).padStart(2, "0");
+				const month = String(d.getMonth() + 1).padStart(2, "0"); // Months are 0-indexed
+				const year = d.getFullYear();
+				return `${year}-${month}-${day}`;
+			};
+
+			const formData = {
 				name: newGroupName,
-				teacher: selectedTeacherId,
-				lesson_days: lessonDaysSelected,
-				start_date: startDate,
-				end_date: endDate,
-				state,
-			});
+				teacher_id: assignedTeacher,
+				subject_id: selectedSubject,
+				lesson_days: selectedLessonDays,
+				start_date: formatDate(groupStartDate),
+				end_date: formatDate(groupEndDate),
+				is_active: groupState,
+				lesson_start_time: formatTime(lessonStartTime),
+				lesson_end_time: formatTime(lessonEndTime),
+			};
+
+			await axiosInstance.post("/groups/", formData);
 			fetchGroups();
+			Toast.show({
+				type: "success",
+				text1: "Guruh muvaffaqiyatli qo'shildi",
+			});
 		} catch (error) {
-			if (error.response && error.response.status === 400) {
-				Toast.show({
-					type: "error",
-					position: "top",
-					text1: "Error adding group",
-					text2: "Group with this name already exists",
-				});
-			}
 			console.error("Error while adding group", error);
 		} finally {
-			setIsActionLoading(false);
-			setIsAddModalVisible(false);
+			setIsActionInProgress(false);
+			setIsCreateModalVisible(false);
 		}
 	};
 
-	const handleCancelAdd = () => {
-		setIsAddModalVisible(false);
-		setValidationError("");
+	const handleCancelCreate = () => {
+		setIsCreateModalVisible(false);
+		setErrorMessage("");
+	};
+
+	const handleEditGroup = group => {
+		setCurrentGroup(group);
+		setGroupNameToEdit(group.name);
+		setSelectedLessonDays(group.lesson_days);
+		setGroupStartDate(new Date(group.start_date));
+		setGroupEndDate(new Date(group.end_date));
+		setGroupState(group.state);
+		setAssignedTeacher(group.teacher.id);
+		setIsEditModalVisible(true);
+	};
+
+	const handleSaveEditGroup = async () => {
+		if (
+			!groupNameToEdit ||
+			!assignedTeacher ||
+			!selectedLessonDays ||
+			!groupStartDate ||
+			!groupEndDate ||
+			groupState === null
+		) {
+			setErrorMessage("Please fill out all fields");
+			return;
+		}
+		setErrorMessage("");
+		setIsActionInProgress(true);
+		try {
+			await axiosInstance.put(`/groups/${currentGroup.id}/`, {
+				name: groupNameToEdit,
+				teacher: assignedTeacher,
+				lesson_days: selectedLessonDays,
+				start_date: groupStartDate,
+				end_date: groupEndDate,
+				state: groupState,
+			});
+			fetchGroups();
+		} catch (error) {
+			console.error("Error while editing group", error);
+		} finally {
+			setIsActionInProgress(false);
+			setIsEditModalVisible(false);
+		}
+	};
+
+	const handleCancelEdit = () => {
+		setIsEditModalVisible(false);
+		setErrorMessage("");
+	};
+
+	// Handle Delete Function
+	const handleDeleteGroup = async groupId => {
+		setIsActionInProgress(true);
+		try {
+			await axiosInstance.delete(`/groups/${groupId}/`);
+			fetchGroups();
+			Toast.show({
+				type: "success",
+				text1: "Guruh muvaffaqiyatli o'chirildi",
+			});
+		} catch (error) {
+			console.error("Error while deleting group", error);
+			Toast.show({
+				type: "error",
+				text1: "Xatolik",
+				text2: "Guruhni o'chirishda xatolik yuz berdi",
+			});
+		} finally {
+			setIsActionInProgress(false);
+		}
 	};
 
 	return (
 		<View style={styles.container}>
 			<View style={styles.addGroupButtonContainer}>
 				<Button
+					buttonText={<MaterialIcons name="sync" size={24} />}
+					buttonHeight={30}
+					buttonWidth="15%"
+					handlePress={fetchGroups}
+				/>
+				<Button
 					buttonText="Guruh qo'shish"
 					buttonHeight={30}
 					buttonWidth="45%"
-					handlePress={handleAddNewGroup}
+					handlePress={handleCreateNewGroup}
 				/>
 			</View>
 
-			{isLoading ? (
+			{isFetching ? (
 				<View style={styles.loadingContainer}>
 					<ActivityIndicator size="large" color="#007BFF" />
 				</View>
 			) : (
 				<GroupsTable
-					groups={groups}
-					onEdit={handleEdit}
-					onDelete={handleDelete}
+					groups={groupList}
+					onEdit={handleEditGroup}
+					onDelete={handleDeleteGroup} // Pass handleDeleteGroup to GroupsTable
 				/>
 			)}
 
-			{isActionLoading && (
+			{isActionInProgress && (
 				<View style={styles.loadingContainer}>
 					<ActivityIndicator size="large" color="#007BFF" />
 				</View>
 			)}
 
-			{isAddModalVisible && (
+			{isCreateModalVisible && (
 				<Modal
-					isVisible={isAddModalVisible}
-					onCancel={handleCancelAdd}
+					isVisible={isCreateModalVisible}
+					onCancel={handleCancelCreate}
 					onSave={handleSaveNewGroup}
-					saveButtonText="Qo'shish"
+					saveButtonText="Saqlash"
 					cancelButtonText="Bekor qilish"
 				>
 					<View style={styles.fields}>
 						<Text style={styles.modalHeader}>Yangi guruh qo'shish</Text>
 
-						<TeacherDropdown onTeacherSelect={setSelectedTeacherId} />
+						<TeacherDropdown onTeacherSelect={setAssignedTeacher} />
+
+						<SubjectDropdown onSubjectSelect={setSelectedSubject} />
 
 						<TextInput
 							placeholderTextColor="#00000070"
 							style={styles.input}
-							placeholder="Guruh nomi"
+							placeholder="Group Name"
 							value={newGroupName}
 							onChangeText={setNewGroupName}
 						/>
 
-						{/* Start and End Date Picker */}
 						<View style={styles.datePickers}>
-							<View style={styles.datePickerContainer}>
-								<Text>O'qish bosh. sanasi:</Text>
-								<DatePicker
-									style={styles.datePicker}
-									value={startDate}
-									mode="date"
-									display="default"
-									onChange={(event, selectedDate) =>
-										setStartDate(selectedDate || startDate)
-									}
-								/>
-							</View>
-							<View style={styles.datePickerContainer}>
-								<Text>O'qish tugash sanasi:</Text>
-								<DatePicker
-									style={styles.datePicker}
-									value={endDate}
-									mode="date"
-									display="default"
-									onChange={(event, selectedDate) =>
-										setEndDate(selectedDate || endDate)
-									}
-								/>
-							</View>
+							<DatePickerComponent
+								label="Start Date:"
+								date={groupStartDate}
+								showDatePicker={isStartDatePickerVisible}
+								setShowDatePicker={setIsStartDatePickerVisible}
+								setDate={setGroupStartDate}
+							/>
+							<DatePickerComponent
+								label="End Date:"
+								date={groupEndDate}
+								showDatePicker={isEndDatePickerVisible}
+								setShowDatePicker={setIsEndDatePickerVisible}
+								setDate={setGroupEndDate}
+							/>
 						</View>
 
 						<LessonDaysDropdown
-							lessonDaysSelected={lessonDaysSelected}
-							setLessonDays={setLessonDays}
+							lessonDaysSelected={selectedLessonDays}
+							setState={setSelectedLessonDays}
 						/>
 
-						<GroupStateDropdown />
+						<TimePicker
+							label="Lesson Start Time"
+							value={lessonStartTime}
+							onChange={setLessonStartTime}
+						/>
+						<TimePicker
+							label="Lesson End Time"
+							value={lessonEndTime}
+							onChange={setLessonEndTime}
+						/>
+
+						<GroupStateDropdown setState={setGroupState} />
 					</View>
 
-					{validationError && (
-						<Text style={styles.validationError}>{validationError}</Text>
+					{errorMessage && (
+						<Text style={styles.validationError}>{errorMessage}</Text>
 					)}
 				</Modal>
 			)}
@@ -263,17 +338,62 @@ function Groups() {
 				<Modal
 					isVisible={isEditModalVisible}
 					onCancel={handleCancelEdit}
-					onSave={handleSaveEdit}
-					saveButtonText="Saqlash"
-					cancelButtonText="Bekor qilish"
+					onSave={handleSaveEditGroup}
+					saveButtonText="Save"
+					cancelButtonText="Cancel"
 				>
-					<Text style={styles.modalHeader}>Guruh nomini o'zgartirish</Text>
-					<TextInput
-						autoFocus
-						style={styles.input}
-						value={editedName}
-						onChangeText={setEditedName}
-					/>
+					<View style={styles.fields}>
+						<Text style={styles.modalHeader}>Edit Group</Text>
+
+						<TeacherDropdown onTeacherSelect={setAssignedTeacher} />
+
+						<TextInput
+							placeholderTextColor="#00000070"
+							style={styles.input}
+							placeholder="Group Name"
+							value={groupNameToEdit}
+							onChangeText={setGroupNameToEdit}
+						/>
+
+						<View style={styles.datePickers}>
+							<DatePickerComponent
+								label="Start Date:"
+								date={groupStartDate}
+								showDatePicker={isStartDatePickerVisible}
+								setShowDatePicker={setIsStartDatePickerVisible}
+								setDate={setGroupStartDate}
+							/>
+							<DatePickerComponent
+								label="End Date:"
+								date={groupEndDate}
+								showDatePicker={isEndDatePickerVisible}
+								setShowDatePicker={setIsEndDatePickerVisible}
+								setDate={setGroupEndDate}
+							/>
+						</View>
+
+						<LessonDaysDropdown
+							lessonDaysSelected={selectedLessonDays}
+							setState={setSelectedLessonDays}
+						/>
+
+						<TimePicker
+							label="Start Time"
+							value={lessonStartTime}
+							onChange={setLessonStartTime}
+						/>
+						<TimePicker
+							label="End Time"
+							value={lessonEndTime}
+							onChange={setLessonEndTime}
+						/>
+
+						<GroupStateDropdown setState={setGroupState} />
+					</View>
+
+					{errorMessage && (
+						<Text style={styles.validationError}>{errorMessage}</Text>
+					)}
 				</Modal>
 			)}
 		</View>
@@ -286,17 +406,11 @@ const styles = StyleSheet.create({
 		padding: 20,
 	},
 	fields: {
-		gap: 20,
+		gap: 10,
 	},
 	datePickers: {
 		flexDirection: "column",
 		gap: 20,
-	},
-	datePickerContainer: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		gap: 10,
 	},
 	input: {
 		borderWidth: 1,
@@ -306,27 +420,24 @@ const styles = StyleSheet.create({
 		fontSize: 16,
 	},
 	modalHeader: {
-		fontSize: 16,
-		marginBottom: 10,
+		fontSize: 18,
+		fontWeight: "bold",
 	},
-	addGroupButtonContainer: {
-		alignItems: "flex-end",
-		marginBottom: 20,
+	validationError: {
+		color: "red",
+		fontSize: 14,
 	},
 	loadingContainer: {
 		flex: 1,
 		justifyContent: "center",
 		alignItems: "center",
 	},
-	validationError: {
-		color: "red",
-		fontSize: 14,
-		marginTop: 15,
-		textAlign: "center",
-	},
-	datePicker: {
-		width: "100%",
+	addGroupButtonContainer: {
+		flexDirection: "row",
+		justifyContent: "flex-end",
+		marginBottom: 20,
+		gap: 12,
 	},
 });
 
-export default Groups;
+export default GroupManager;

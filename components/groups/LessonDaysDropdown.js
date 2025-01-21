@@ -8,7 +8,7 @@ const data = [
 	{ label: "Sesh, Pay, Shan", value: "2-4-6" },
 ];
 
-const GroupStateDropdown = () => {
+const LessonDaysDropdown = ({ setState }) => {
 	const [value, setValue] = useState(null);
 	const [open, setOpen] = useState(false);
 
@@ -43,7 +43,8 @@ const GroupStateDropdown = () => {
 				onFocus={() => setOpen(true)}
 				onBlur={() => setOpen(false)}
 				onChange={item => {
-					setValue(item.value);
+					setValue(item.value); // Update the local state of the dropdown
+					setState(item.value); // Update the parent state
 					setOpen(false);
 				}}
 				renderLeftIcon={() => (
@@ -59,7 +60,7 @@ const GroupStateDropdown = () => {
 	);
 };
 
-export default GroupStateDropdown;
+export default LessonDaysDropdown;
 
 const styles = StyleSheet.create({
 	container: {

@@ -1,34 +1,36 @@
 import React, { useEffect, useState } from "react";
 import {
 	BackHandler,
-	Keyboard,
-	Modal,
-	ScrollView,
 	StyleSheet,
 	Text,
 	TouchableOpacity,
-	TouchableWithoutFeedback,
 	View,
 } from "react-native";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { lessonDays } from "../../constants";
+import Modal from "../UI/Modal";
 
 const GroupTableItem = ({ index, item, onEdit, onDelete }) => {
 	const [isModalVisible, setModalVisible] = useState(false);
+	const [isDeleteModalVisible, setDeleteModalVisible] = useState(false); // Modal for delete confirmation
 
-	// Function to toggle the modal visibility
 	const toggleModal = () => {
 		setModalVisible(!isModalVisible);
+	};
+
+	const toggleDeleteModal = () => {
+		setDeleteModalVisible(!isDeleteModalVisible);
 	};
 
 	// Handle Android back button to close the modal
 	useEffect(() => {
 		const backAction = () => {
-			if (isModalVisible) {
+			if (isModalVisible || isDeleteModalVisible) {
 				setModalVisible(false);
-				return true; // Prevent default behavior
+				setDeleteModalVisible(false);
+				return true;
 			}
-			return false; // Allow default behavior
+			return false;
 		};
 
 		const backHandler = BackHandler.addEventListener(
@@ -37,7 +39,7 @@ const GroupTableItem = ({ index, item, onEdit, onDelete }) => {
 		);
 
 		return () => backHandler.remove(); // Cleanup on unmount
-	}, [isModalVisible]);
+	}, [isModalVisible, isDeleteModalVisible]);
 
 	// Format date to dd.mm.yyyy
 	const formatDate = date => {
@@ -50,7 +52,7 @@ const GroupTableItem = ({ index, item, onEdit, onDelete }) => {
 
 	return (
 		<>
-			<TouchableOpacity onPress={toggleModal}>
+			<TouchableOpacity onLongPress={toggleModal}>
 				<View style={styles.groupItem}>
 					<Text style={styles.groupNumber}>{index + 1}.</Text>
 					<View style={styles.groupTextContainer}>
@@ -71,7 +73,7 @@ const GroupTableItem = ({ index, item, onEdit, onDelete }) => {
 						<TouchableOpacity
 							disabled={Number(item.students) > 0}
 							style={styles.actionButton}
-							onPress={() => onDelete(item.id)}
+							onPress={toggleDeleteModal} // Show delete confirmation modal
 						>
 							<MaterialIcons
 								name="delete"
@@ -85,56 +87,54 @@ const GroupTableItem = ({ index, item, onEdit, onDelete }) => {
 
 			{/* Modal for group details */}
 			<Modal
-				animationType="fade"
-				transparent={true}
-				visible={isModalVisible}
-				onRequestClose={toggleModal}
+				isVisible={isModalVisible}
+				onCancel={toggleModal}
+				onSave={() => {}}
+				saveButtonText="Save" // If needed
+				cancelButtonText="Close"
 			>
-				<TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-					<View style={styles.modalOverlay}>
-						<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-							<View style={styles.modalContent}>
-								<Text style={styles.modalTitle}>Guruh ma'lumotlari</Text>
-								<ScrollView>
-									{[
-										["Nomi", item.name],
-										[
-											"O'qituvchisi",
-											`${item.teacher.first_name} ${item.teacher.last_name}`,
-										],
-										["O'quvchilar soni", `${item.students} ta`],
-										["Yaratilgan sana", formatDate(item.created)],
-										["Yangilangan sana", formatDate(item.updated)],
-										["Dars kunlari", lessonDays[item.lesson_days]],
-										["O'qish boshlanish sanasi", formatDate(item.start_date)],
-										["O'qish tugash sanasi", formatDate(item.end_date)],
-										[
-											"Holati",
-											<Text
-												style={{
-													color: item.is_active ? "green" : "red",
-												}}
-											>
-												{item.is_active ? "Faol" : "Nofaol"}
-											</Text>,
-										],
-									].map(([label, value], idx) => (
-										<View style={styles.modalRow} key={idx}>
-											<Text style={styles.modalLabel}>{label}</Text>
-											<Text style={styles.modalValue}>{value}</Text>
-										</View>
-									))}
-								</ScrollView>
-								<TouchableOpacity
-									style={styles.closeButton}
-									onPress={toggleModal}
-								>
-									<Text style={styles.closeButtonText}>Yopish</Text>
-								</TouchableOpacity>
-							</View>
-						</TouchableWithoutFeedback>
+				<Text style={styles.modalTitle}>Guruh ma'lumotlari</Text>
+				{[
+					["Nomi", item.name],
+					[
+						"O'qituvchisi",
+						`${item.teacher.first_name} ${item.teacher.last_name}`,
+					],
+					["O'quvchilar soni", `${item.students} ta`],
+					["Yaratilgan sana", formatDate(item.created)],
+					["Yangilangan sana", formatDate(item.updated)],
+					["Dars kunlari", lessonDays[item.lesson_days]],
+					["O'qish boshlanish sanasi", formatDate(item.start_date)],
+					["O'qish tugash sanasi", formatDate(item.end_date)],
+					[
+						"Holati",
+						<Text
+							style={{
+								color: item.is_active ? "green" : "red",
+							}}
+						>
+							{item.is_active ? "Faol" : "Nofaol"}
+						</Text>,
+					],
+				].map(([label, value], idx) => (
+					<View style={styles.modalRow} key={idx}>
+						<Text style={styles.modalLabel}>{label}</Text>
+						<Text style={styles.modalValue}>{value}</Text>
 					</View>
-				</TouchableWithoutFeedback>
+				))}
+			</Modal>
+
+			{/* Delete Confirmation Modal */}
+			<Modal
+				isVisible={isDeleteModalVisible}
+				onCancel={toggleDeleteModal}
+				onSave={onDelete.bind(null, item.id)}
+				saveButtonText="Ha"
+				cancelButtonText="Yo'q"
+			>
+				<Text style={styles.confirmDeleteTitle}>
+					"{item.name}" guruhini o'chirishni tasdiqlaysizmi?
+				</Text>
 			</Modal>
 		</>
 	);
@@ -178,18 +178,6 @@ const styles = StyleSheet.create({
 	actionButton: {
 		marginLeft: 0,
 	},
-	modalOverlay: {
-		flex: 1,
-		backgroundColor: "rgba(0, 0, 0, 0.5)",
-		justifyContent: "center",
-		alignItems: "center",
-	},
-	modalContent: {
-		width: "90%",
-		backgroundColor: "#FFF",
-		borderRadius: 10,
-		padding: 20,
-	},
 	modalTitle: {
 		fontSize: 18,
 		fontWeight: "bold",
@@ -203,7 +191,6 @@ const styles = StyleSheet.create({
 		borderBottomWidth: 1,
 		borderBottomColor: "#E9ECEF",
 		paddingVertical: 4,
-		// marginBottom: 4,
 	},
 	modalLabel: {
 		fontSize: 16,
@@ -214,16 +201,10 @@ const styles = StyleSheet.create({
 		color: "#212529",
 		textAlign: "right",
 	},
-	closeButton: {
-		backgroundColor: "#007BFF",
-		padding: 10,
-		borderRadius: 5,
-		alignItems: "center",
-		marginTop: 10,
-	},
-	closeButtonText: {
-		color: "#FFF",
+	confirmDeleteTitle: {
 		fontSize: 16,
+		fontWeight: "bold",
+		marginBottom: 20,
 	},
 });
 

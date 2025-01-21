@@ -1,23 +1,35 @@
 import AntDesign from "@expo/vector-icons/AntDesign";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
+import useAxios from "../../hooks/useAxios";
 
-const data = [
-	{ label: "Faol", value: true },
-	{ label: "Nofaol", value: false },
-];
-
-const GroupStateDropdown = ({ setState }) => {
-	const [value, setValue] = useState(null); // Local state for the dropdown value
+const SubjectDropdown = ({ onSubjectSelect }) => {
+	const [subjects, setSubjects] = useState([]);
+	const [value, setValue] = useState(null);
 	const [open, setOpen] = useState(false);
+	const axiosInstance = useAxios();
+
+	useEffect(() => {
+		const fetchSubjects = async () => {
+			try {
+				const response = await axiosInstance.get("/subjects/");
+				const formattedSubjects = response.data.map(subject => ({
+					label: subject.name, // Using 'name' for the label
+					value: String(subject.id), // Using 'id' for the value, ensuring it's a string
+				}));
+				setSubjects(formattedSubjects);
+			} catch (error) {
+				console.error("Error fetching subjects", error);
+			}
+		};
+		fetchSubjects();
+	}, []);
 
 	const renderLabel = () => {
-		if (value != null || open) {
+		if (value || open) {
 			return (
-				<Text style={[styles.label, open && { color: "#007BFF" }]}>
-					Faollik statusi
-				</Text>
+				<Text style={[styles.label, open && { color: "#007BFF" }]}>Fanlar</Text>
 			);
 		}
 		return null;
@@ -32,35 +44,26 @@ const GroupStateDropdown = ({ setState }) => {
 				selectedTextStyle={[
 					styles.selectedTextStyle,
 					open && { color: "#007BFF" },
-					{ color: value ? "green" : "red" },
 				]}
 				iconStyle={[styles.iconStyle, open && { tintColor: "#007BFF" }]}
-				data={data}
+				data={subjects}
 				maxHeight={300}
 				labelField="label"
 				valueField="value"
-				placeholder={!open ? "Faoolik statusi" : ""}
+				placeholder={!open ? "Fan" : ""}
 				value={value}
 				onFocus={() => setOpen(true)}
 				onBlur={() => setOpen(false)}
 				onChange={item => {
-					setValue(item.value); // Update the local state of the dropdown
-					setState(item.value); // Update the parent state
+					setValue(item.value);
 					setOpen(false);
+					onSubjectSelect(item.value); // Notify parent of selection
 				}}
 				renderLeftIcon={() => (
 					<AntDesign
 						style={styles.icon}
-						color={
-							value === true
-								? "green"
-								: value === false
-								? "red"
-								: value === null && open
-								? "#007BFF"
-								: "#00000070"
-						}
-						name="Safety"
+						color={open ? "#007BFF" : value ? "black" : "#00000070"}
+						name="book"
 						size={20}
 					/>
 				)}
@@ -69,7 +72,7 @@ const GroupStateDropdown = ({ setState }) => {
 	);
 };
 
-export default GroupStateDropdown;
+export default SubjectDropdown;
 
 const styles = StyleSheet.create({
 	container: {
@@ -107,9 +110,5 @@ const styles = StyleSheet.create({
 	iconStyle: {
 		width: 20,
 		height: 20,
-	},
-	inputSearchStyle: {
-		height: 40,
-		fontSize: 16,
 	},
 });
